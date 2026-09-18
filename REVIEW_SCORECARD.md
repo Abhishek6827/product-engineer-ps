@@ -11,10 +11,15 @@ Record each item as yes or no before scoring:
 - [ ] The fork is accessible.
 - [ ] The selected problem is clearly identified.
 - [ ] Setup and run instructions are present.
+- [ ] `SUBMISSION.md` is complete.
 - [ ] The demo video is accessible and shows the required scenarios.
 - [ ] The relevant source code is included.
+- [ ] Focused automated tests are included and runnable.
 - [ ] The core acceptance scenario can be demonstrated.
+- [ ] A problem-specific failure or recovery scenario can be demonstrated.
+- [ ] The verification benchmark includes a reproducible command or documented sequence and observed results.
 - [ ] AI usage is disclosed.
+- [ ] The credibility note identifies the candidate's contribution to a previously shipped system.
 - [ ] No secrets or private credentials are committed.
 
 If a submission is incomplete, record the exact missing evidence. An administrative issue such as video permissions is different from missing implementation work and should be treated accordingly.
@@ -52,6 +57,7 @@ Calculate each weighted result as `(rating / 5) × weight`.
 - Does the demo match the submitted code?
 - Are state transitions and externally visible outcomes correct?
 - Can the reviewer reproduce the primary behavior?
+- Does the problem-specific verification benchmark support the candidate's claims?
 
 ### Software architecture and decomposition — 25%
 
@@ -82,6 +88,7 @@ Calculate each weighted result as `(rating / 5) × weight`.
 - Is at least one relevant failure or recovery path tested?
 - Are tests deterministic and reasonably isolated?
 - Can tests run without paid external services?
+- Does the benchmark expose incorrect ordering, duplication, recovery, or terminal-state behavior where relevant?
 
 ### Communication and trade-offs — 5%
 
@@ -113,6 +120,18 @@ Use the discussion to validate ownership and understanding, including when AI to
 5. Discuss one production-scale concern from their `SUBMISSION.md`.
 
 Do not ask candidates to reproduce memorized syntax. The goal is to verify that they understand, can critique, and can evolve the submitted design.
+
+### Problem-specific change prompts
+
+Choose one small change matching the submitted problem:
+
+- **Resumable realtime conversation:** Ask how the design behaves when the requested cursor is older than retained history, then change or describe the recovery response.
+- **Offline mobile conversation:** Change the ordering policy so one permanently failing message does not block later messages.
+- **Durable reminders and follow-ups:** Reschedule an item after a worker has claimed its previous version and explain which outcome should win.
+- **Trustworthy long-term memory:** Add a fact that returns to a previously superseded value and preserve an understandable history.
+- **Reliable AI conversation runtime:** Allow cancelled partial output to be retained without representing the turn as successfully completed.
+
+The candidate may implement the change or describe it using concrete files, state transitions, and tests. Evaluate ownership and reasoning, not typing speed.
 
 ## 6. Recommendation
 
