@@ -14,12 +14,14 @@
   // ── DOM References ──────────────────────────────────────────────────
   const messageInput    = document.getElementById('messageInput');
   const sendBtn         = document.getElementById('sendBtn');
+  const stopBtn         = document.getElementById('stopBtn');
   const messagesEl      = document.getElementById('messages');
   const welcomeMessage  = document.getElementById('welcomeMessage');
   const connectionBadge = document.getElementById('connectionBadge');
   const connectionLabel = document.getElementById('connectionLabel');
   const disconnectBtn   = document.getElementById('disconnectBtn');
   const reconnectBtn    = document.getElementById('reconnectBtn');
+  const cancelBtn       = document.getElementById('cancelBtn');
   const failBtn         = document.getElementById('failBtn');
   const resetBtn        = document.getElementById('resetBtn');
   const chunkCountInput = document.getElementById('chunkCountInput');
@@ -42,7 +44,7 @@
   let totalReceived = 0;         // Count of events actually rendered
   let duplicatesRejected = 0;    // Count of dedup rejections
   let assistantBubble = null;    // Current assistant message bubble DOM node
-  let connectionState = 'idle';  // idle|connected|reconnecting|disconnected|completed|failed|interrupted
+  let connectionState = 'idle';  // idle|connected|reconnecting|disconnected|completed|failed|interrupted|cancelled
   let isReplayPhase = true;      // Tracks whether we're in replay or live phase
 
   // ── Connection State Management ─────────────────────────────────────
@@ -58,18 +60,29 @@
       completed: 'Completed',
       failed: 'Failed',
       interrupted: 'Interrupted',
+      cancelled: 'Cancelled',
     };
     connectionLabel.textContent = labels[state] || state;
 
     // Update button states
     const isStreaming = state === 'connected';
     const isDisconnected = state === 'disconnected';
-    const isTerminal = ['completed', 'failed', 'interrupted'].includes(state);
+    const isTerminal = ['completed', 'failed', 'interrupted', 'cancelled'].includes(state);
 
     disconnectBtn.disabled = !isStreaming;
     reconnectBtn.disabled  = !isDisconnected;
     failBtn.disabled       = !isStreaming;
+    cancelBtn.disabled     = !isStreaming;
     sendBtn.disabled       = isStreaming || state === 'reconnecting';
+
+    // Toggle between Send and Stop buttons
+    if (isStreaming) {
+      sendBtn.style.display = 'none';
+      stopBtn.style.display = 'flex';
+    } else {
+      sendBtn.style.display = 'flex';
+      stopBtn.style.display = 'none';
+    }
   }
 
   function updateStatus() {
@@ -268,7 +281,7 @@
       // If the connection is fully closed (readyState=2), it means the server closed it
       if (eventSource && eventSource.readyState === EventSource.CLOSED) {
         // Only set disconnected if not already in a terminal state
-        if (!['completed', 'failed', 'interrupted'].includes(connectionState)) {
+        if (!['completed', 'failed', 'interrupted', 'cancelled'].includes(connectionState)) {
           setConnectionState('disconnected');
           logMeta('SSE connection closed unexpectedly');
         }
@@ -422,8 +435,24 @@
     updateStatus();
   }
 
+  // ── Cancel Run (Optional Stretch Work) ────────────────────────────
+  async function cancelCurrentRun() {
+    if (!currentRunId) return;
+    try {
+      logMeta('Requesting run cancellation…');
+      const res = await fetch(`/api/runs/${currentRunId}/cancel`, { method: 'POST' });
+      if (res.ok) {
+        logMeta('Run cancelled successfully by user');
+      }
+    } catch (err) {
+      logMeta(`Failed to cancel run: ${err.message}`);
+    }
+  }
+
   // ── Event Listeners ────────────────────────────────────────────────
   sendBtn.addEventListener('click', sendMessage);
+  stopBtn.addEventListener('click', cancelCurrentRun);
+  cancelBtn.addEventListener('click', cancelCurrentRun);
   messageInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !sendBtn.disabled) sendMessage();
   });

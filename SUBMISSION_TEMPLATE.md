@@ -3,8 +3,8 @@
 ## Candidate
 
 - **Name:** Abhishek Tiwari
-- **Email:**abhishektiwari6827@gmail.com    
-- **GitHub:**[https://github.com/Abhishektiwari6827]
+- **Email:** abhishektiwari6827@gmail.com
+- **GitHub:** https://github.com/Abhishek6827/product-engineer-ps
 - **Selected problem:** Problem 1: Resumable Realtime Conversation
 - **Demo video:** https://www.loom.com/share/df12d7296c8d49c4ade250d7cc6e52b7
 
@@ -48,11 +48,16 @@ Open your browser at `http://localhost:3000`.
    - Start a long run (e.g. 50 chunks, 300ms delay).
    - Kill the server process in the terminal (`Ctrl+C`).
    - Restart the server (`npm run dev`).
-   - The server runs startup recovery: any run left in `running` or `queued` state is automatically recovered and marked as `interrupted` with `error: 'Process restarted while run was active'`, while all events generated prior to the restart are preserved intact.
+    - The server runs startup recovery: any run left in `running` or `queued` state is automatically recovered and marked as `interrupted` with `error: 'Process restarted while run was active'`, while all events generated prior to the restart are preserved intact.
+
+5. **User-Initiated Cancellation Scenario (Optional Stretch Work)**:
+   - While a stream is running, click the square **Stop** button in the chat composer (or **Cancel Run** in the *Resilience Controls* panel).
+   - Generation is aborted immediately on the server via `AbortController`, the run transitions to `cancelled`, and all chunks generated up to that moment are durably preserved.
+   - Any client reconnecting or refreshing receives the terminal `cancelled` state with intact history.
 
 ## Run the tests
 
-Run the deterministic automated test suite covering all 6 acceptance criteria (AC1–AC6):
+Run the deterministic automated test suite covering all 6 acceptance criteria (AC1–AC6) plus the optional stretch test:
 
 ```bash
 npm test
@@ -68,6 +73,7 @@ All acceptance scenarios have been implemented and verified:
 - **AC4b (Restart recovery — in-progress)**: In-progress runs survive a sudden process restart and transition to `interrupted` with durable history intact.
 - **AC5 (Failure resiliency)**: Generator errors or injected failures transition the run to `failed` while preserving all previous events.
 - **AC6 (Out-of-range cursor validation)**: Reconnecting with a cursor beyond the maximum known sequence returns an explicit `400 Bad Request`.
+- **Stretch (User-initiated cancellation)**: Active runs can be cancelled mid-generation via `POST /api/runs/:runId/cancel` or UI Stop button, aborting generator execution immediately, transitioning to `cancelled`, and cleanly preserving durable history.
 
 ### Problem-Specific Verification Benchmark
 
@@ -215,6 +221,13 @@ npm run benchmark
    - *Follow-Up Question (50 events retention)*: If the server only retains the last 50 events and a client reconnects with an older cursor (e.g., `afterSeq=10` on a 100-event run where `minSeq=51`):
      - The server detects `afterSeq < minAvailableSeq` and returns HTTP `410 Gone` or `400 Bad Request` with `{ error: 'cursor_expired', minAvailableSeq: 51 }`.
      - The client cannot safely replay without gaps; it notifies the user, falls back to fetching the compiled snapshot text from `GET /api/runs/:runId`, resets its cursor to the snapshot end, and resumes streaming from that point forward.
+
+9. **User-Initiated Cancellation (Optional Stretch Work)**:
+   - Implemented via `POST /api/runs/:runId/cancel`.
+   - Aborts generation immediately via the run's internal `AbortController`, preventing unnecessary token generation and server compute.
+   - Atomically updates SQLite state to `cancelled` and records `completed_at` timestamp.
+   - Durably retains all events emitted prior to cancellation so the conversation history and inspector remain truthful.
+   - Broadcasts terminal `run_state: { state: 'cancelled' }` event to all open SSE connections and releases generator resources.
 
 ## Assumptions and limitations
 

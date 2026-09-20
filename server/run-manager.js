@@ -106,13 +106,17 @@ async function consumeGenerator(runId, emitter, signal, generatorOpts) {
     // If aborted, don't mark as completed
     if (signal.aborted) {
       try {
+        const current = getRun(runId);
+        if (current?.state === 'cancelled') {
+          return;
+        }
         updateRunState(runId, 'interrupted', {
           completedAt: new Date().toISOString(),
           error: 'Run was cancelled',
           totalEvents: seq,
         });
+        emitter.emit('done', { state: 'interrupted', totalEvents: seq });
       } catch { /* DB closed */ }
-      emitter.emit('done', { state: 'interrupted', totalEvents: seq });
     } else {
       // Successful completion
       try {
@@ -176,6 +180,39 @@ export function injectFailure(runId) {
       emitter.emit('done', { state: 'failed', error: 'Injected failure for testing' });
     }
   }
+}
+
+/**
+ * User-initiated run cancellation (Optional stretch work).
+ * Aborts generation immediately, updates state to 'cancelled', and preserves durable history.
+ * @param {string} runId
+ * @returns {boolean} true if run was active and cancelled
+ */
+export function cancelRun(runId) {
+  const controller = activeControllers.get(runId);
+  if (!controller) return false;
+
+  const run = getRun(runId);
+  if (!run || !['queued', 'running'].includes(run.state)) {
+    return false;
+  }
+
+  // Signal the generator to stop immediately
+  controller.abort();
+
+  const maxSeq = getMaxSeq(runId);
+  updateRunState(runId, 'cancelled', {
+    completedAt: new Date().toISOString(),
+    totalEvents: maxSeq,
+    error: null,
+  });
+
+  const emitter = activeEmitters.get(runId);
+  if (emitter) {
+    emitter.emit('done', { state: 'cancelled', totalEvents: maxSeq });
+  }
+
+  return true;
 }
 
 /**

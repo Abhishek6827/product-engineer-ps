@@ -24,6 +24,7 @@ import {
   getMaxSeq,
   getEmitter,
   injectFailure,
+  cancelRun,
 } from './run-manager.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -124,7 +125,7 @@ export function createApp() {
 
     // Check if run is already in a terminal state — if so, send done and close
     const currentRun = getRun(runId);
-    if (['completed', 'failed', 'interrupted'].includes(currentRun.state)) {
+    if (['completed', 'failed', 'interrupted', 'cancelled'].includes(currentRun.state)) {
       writeMeta('run_state', {
         state: currentRun.state,
         totalEvents: currentRun.total_events,
@@ -190,6 +191,20 @@ export function createApp() {
     }
     injectFailure(req.params.runId);
     res.json({ ok: true, message: 'Failure injected' });
+  });
+
+  // ── POST /api/runs/:runId/cancel ────────────────────────────────────
+  // User-initiated cancellation endpoint (Optional stretch work).
+  app.post('/api/runs/:runId/cancel', (req, res) => {
+    const run = getRun(req.params.runId);
+    if (!run) {
+      return res.status(404).json({ error: 'Run not found' });
+    }
+    if (!['queued', 'running'].includes(run.state)) {
+      return res.status(409).json({ error: `Run cannot be cancelled because it is already ${run.state}` });
+    }
+    const cancelled = cancelRun(req.params.runId);
+    res.json({ ok: cancelled, state: 'cancelled' });
   });
 
   return app;

@@ -386,4 +386,49 @@ describe('Resumable Realtime Conversation', () => {
       srv.close();
     }
   });
+
+
+  // ── Stretch: User-initiated cancellation ──────────────────────────
+  it('Stretch: user can cancel an active run mid-generation', async () => {
+    const dbPath = join(tmpDir, 'stretch_cancel.db');
+    srv = await startServer(dbPath);
+
+    try {
+      // Start a slow run
+      const { runId } = await startChat(srv.baseUrl, { chunkCount: 50, delayMs: 40 });
+
+      // Consume until seq 5
+      const phase1 = await consumeSSE(
+        `${srv.baseUrl}/api/runs/${runId}/stream`,
+        { stopAfterSeq: 5 }
+      );
+      assert.ok(phase1.events.length >= 5);
+
+      // Issue user-initiated cancellation via API
+      const cancelRes = await fetch(`${srv.baseUrl}/api/runs/${runId}/cancel`, {
+        method: 'POST',
+      });
+      assert.equal(cancelRes.status, 200);
+      const cancelBody = await cancelRes.json();
+      assert.equal(cancelBody.state, 'cancelled');
+
+      // Verify run state in database is 'cancelled'
+      const runRes = await fetch(`${srv.baseUrl}/api/runs/${runId}`);
+      const run = await runRes.json();
+      assert.equal(run.state, 'cancelled');
+
+      // Preserved history should have all events up to cancellation
+      assert.ok(run.events.length >= 5);
+      // Run must not have generated all 50 chunks
+      assert.ok(run.events.length < 50);
+
+      // Replay should reflect terminal cancelled state
+      const streamRes = await consumeSSE(
+        `${srv.baseUrl}/api/runs/${runId}/stream?afterSeq=${run.events.length}`
+      );
+      assert.equal(streamRes.runState?.state, 'cancelled');
+    } finally {
+      srv.close();
+    }
+  });
 });

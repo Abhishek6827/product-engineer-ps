@@ -57,7 +57,7 @@ export function initDb(dbPath = DEFAULT_DB_PATH) {
       conversation_id TEXT NOT NULL,
       user_message_id TEXT NOT NULL,
       state TEXT NOT NULL DEFAULT 'queued'
-        CHECK(state IN ('queued','running','completed','failed','interrupted')),
+        CHECK(state IN ('queued','running','completed','failed','interrupted','cancelled')),
       total_events INTEGER,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       completed_at TEXT,

@@ -323,6 +323,27 @@ html, body {
   cursor: not-allowed;
 }
 
+.stop-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--danger);
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0;
+  box-shadow: 0 0 12px hsla(0, 75%, 55%, 0.4);
+}
+
+.stop-btn:hover {
+  background: hsl(0, 80%, 48%);
+  transform: scale(1.05);
+}
+
 .input-hint {
   display: flex;
   align-items: center;
@@ -415,6 +436,7 @@ html, body {
 
 .ctrl-btn.ctrl-warning:hover:not(:disabled)  { background: var(--warning-dim); border-color: hsl(38, 40%, 28%); color: var(--warning); }
 .ctrl-btn.ctrl-success:hover:not(:disabled)  { background: var(--success-dim); border-color: hsl(152, 40%, 28%); color: var(--success); }
+.ctrl-btn.ctrl-cancel:hover:not(:disabled)   { background: var(--danger-dim); border-color: hsl(0, 40%, 28%); color: var(--danger); }
 .ctrl-btn.ctrl-danger:hover:not(:disabled)   { background: var(--danger-dim); border-color: hsl(0, 40%, 28%); color: var(--danger); }
 
 /* Highlight Reconnect button with glowing green when active */
