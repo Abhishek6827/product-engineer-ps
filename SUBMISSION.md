@@ -3,8 +3,8 @@
 ## Candidate
 
 - **Name:** Abhishek Tiwari
-- **Email:**abhishektiwari6827@gmail.com    
-- **GitHub:**[https://github.com/Abhishektiwari6827]
+- **Email:** abhishektiwari6827@gmail.com
+- **GitHub:** https://github.com/Abhishek6827/product-engineer-ps
 - **Selected problem:** Problem 1: Resumable Realtime Conversation
 - **Demo video:** [Link to Demo Video / Loom]
 

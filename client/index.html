@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resumable Realtime Conversation</title>
+  <meta name="description" content="A resumable streaming conversational companion with cursor-based recovery and durable event history">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Header -->
+    <header class="header" id="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <div class="header-title">
+          <h1>Resumable Conversation</h1>
+          <span class="header-subtitle">Cursor-based SSE streaming with durable recovery</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="connection-badge" id="connectionBadge">
+          <span class="badge-dot"></span>
+          <span class="badge-label" id="connectionLabel">Idle</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Chat Area -->
+      <main class="chat-area" id="chatArea">
+        <div class="messages" id="messages">
+          <div class="welcome-message" id="welcomeMessage">
+            <div class="welcome-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+              </svg>
+            </div>
+            <h2>Send a message to start streaming</h2>
+            <p>Watch the reply stream in real-time, then test interruption and recovery using the controls panel.</p>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area" id="inputArea">
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="messageInput"
+              placeholder="Type a message…"
+              autocomplete="off"
+            >
+            <button id="sendBtn" class="send-btn" title="Send message">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+          <div class="input-hint">
+            <span>Chunks: </span>
+            <input type="number" id="chunkCountInput" value="30" min="5" max="100" title="Number of text chunks to generate">
+            <span> &middot; Delay: </span>
+            <input type="number" id="delayInput" value="120" min="10" max="2000" title="Milliseconds between chunks" step="10">
+            <span>ms</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- Controls & Inspector Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <!-- Resilience Controls -->
+        <section class="panel">
+          <h2 class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            Resilience Controls
+          </h2>
+          <div class="controls-grid">
+            <button id="disconnectBtn" class="ctrl-btn ctrl-warning" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.56 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+              Disconnect
+            </button>
+            <button id="reconnectBtn" class="ctrl-btn ctrl-success" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"></path><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              Reconnect
+            </button>
+            <button id="failBtn" class="ctrl-btn ctrl-danger" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+              Inject Failure
+            </button>
+            <button id="resetBtn" class="ctrl-btn ctrl-neutral">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+              New Chat
+            </button>
+          </div>
+        </section>
+
+        <!-- Run Status -->
+        <section class="panel">
+          <h2 class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            Run Status
+          </h2>
+          <div class="status-grid" id="statusGrid">
+            <div class="status-item">
+              <span class="status-label">Run ID</span>
+              <span class="status-value mono" id="statusRunId">—</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">State</span>
+              <span class="status-value" id="statusRunState">—</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Cursor (last seq)</span>
+              <span class="status-value mono" id="statusCursor">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Events received</span>
+              <span class="status-value mono" id="statusEvents">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Duplicates rejected</span>
+              <span class="status-value mono" id="statusDuplicates">0</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Event Inspector -->
+        <section class="panel panel-grow">
+          <h2 class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            Event Inspector
+          </h2>
+          <div class="event-log" id="eventLog">
+            <div class="event-log-placeholder">Events will appear here during streaming…</div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

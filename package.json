@@ -1,0 +1,15 @@
+{
+  "name": "resumable-realtime-conversation",
+  "version": "1.0.0",
+  "description": "Caygnus Assessment — Problem 1: Resumable Realtime Conversation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.js",
+    "test": "node --test tests/resumable_stream.test.js",
+    "benchmark": "node benchmark/verify.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
