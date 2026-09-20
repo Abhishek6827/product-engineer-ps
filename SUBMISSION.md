@@ -6,7 +6,7 @@
 - **Email:** abhishektiwari6827@gmail.com
 - **GitHub:** https://github.com/Abhishek6827/product-engineer-ps
 - **Selected problem:** Problem 1: Resumable Realtime Conversation
-- **Demo video:** [Link to Demo Video / Loom]
+- **Demo video:** https://www.loom.com/share/df12d7296c8d49c4ade250d7cc6e52b7
 
 ## Run the project
 
