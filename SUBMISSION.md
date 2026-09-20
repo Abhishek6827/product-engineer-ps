@@ -250,12 +250,25 @@ An agentic AI coding assistant was used to scaffold boilerplate, assist in desig
 
 ## Credibility note
 
-Describe one product or system you previously helped ship:
+**Product:** Chintu AI — Full-Stack AI Career & Placement Acceleration Platform (Live Commercial SaaS)
 
-- The problem it solved
-- Your personal contribution
-- The scale or operational complexity involved
-- One difficult engineering or product decision
-- A public link or other evidence, when available
+- **The problem it solved**: Job seekers and candidates preparing for competitive tech careers struggle with fragmented preparation: static resume builders lack JD-specific ATS alignment, generic interview question banks lack dynamic conversational follow-ups, and candidates receive zero actionable feedback on technical depth, speech clarity, and coding correctness. Chintu AI solves this through an integrated, cross-platform ecosystem offering AI-powered resume engineering, conversational mock interviews, live code execution, and holistic performance rubrics across both Web and native Desktop (Windows & macOS).
 
-Confidential details may be anonymized and figures may be approximate.
+- **Your personal contribution**: Designed, architected, and built the product end-to-end as a full-stack engineer:
+  - **Full-Stack Web & Desktop App**: Built the web application using Next.js 14 (App Router, React 18, Tailwind CSS, Framer Motion) and packaged cross-platform desktop distributions with Electron for Windows and macOS, featuring deep linking (`chintu://`), system tray integration, and picture-in-picture mode.
+  - **AI Resume Builder & ATS Engine**: Implemented PDF parsing (`pdf-parse`), automated ATS score calculation, Job-Description keyword matching, and dynamic LaTeX resume generation (`latex-converter`) with one-click PDF compilation.
+  - **Multi-Turn Mock Interview Simulator**: Built an interactive simulation supporting Technical, HR, JD-based, and Mixed modes. Integrated real-time speech recognition (STT) and voice synthesis (TTS) for natural voice-driven turns, followed by comprehensive post-session evaluation reports grading technical accuracy, structure, and communication.
+  - **Coding Sandbox & Multimodal Analysis**: Integrated a code execution sandbox (`/api/execute-code`) for technical coding rounds and vision-based assessment (`/api/answer-vision`) to analyze diagrams and system architecture sketches.
+  - **Multi-Model Orchestration**: Created an adaptive model registry routing between Google Gemini, OpenAI, and Groq SDK to balance sub-second voice latency with deep reasoning for evaluations.
+  - **Data, Auth & Monetization**: Designed a hybrid persistence model combining local SQLite (`better-sqlite3`) / IndexedDB for offline desktop caching with Supabase (PostgreSQL) for cross-device synchronization. Implemented user authentication via Clerk, and built a credits-based economy with Razorpay and Stripe subscription checkout workflows, webhooks, and an affiliate/referral tracking engine.
+
+- **The scale or operational complexity involved**: 
+  - Operating a multi-modal SaaS handling simultaneous audio streaming, real-time token generation, and PDF document processing.
+  - Managing IPC communication and background worker processes in Electron to prevent main-thread UI stutter during heavy audio analysis and model streaming.
+  - Designing dual-tier data synchronization (offline-first local database synced with remote Supabase) to ensure candidate session history and interview reports never drop during spotty network conditions.
+
+- **One difficult engineering or product decision**: 
+  - *Decoupling Realtime Conversational Feedback from Deep Evaluation*: In a mock interview round, users require instantaneous (<500ms) turn responses to maintain conversational realism, but deep analytical scoring (evaluating technical depth, code complexity, communication flaws, and ATS alignment) requires a large-context reasoning model that takes 3–5 seconds.
+  - *The Architecture Decision*: Rather than forcing a single LLM to perform both simultaneously (which caused awkward, unnatural conversation pauses), I engineered a two-stage pipeline: ultra-fast edge inference (Groq / Gemini Flash) handles the turn-by-turn conversational flow and audio turns, while an asynchronous background queue dispatches the full conversation transcript to a high-capacity model to generate the detailed, rubric-based evaluation report after the session concludes.
+
+- **Status & Commercial Evidence**: Live commercial product generating recurring subscription revenue; source code and internal repositories are proprietary and confidential (product walkthrough and live demo available upon request).
