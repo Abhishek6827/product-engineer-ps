@@ -33,6 +33,17 @@ const SAMPLE_WORDS = [
   'lost', 'or', 'duplicated.', 'Each', 'event', 'carries', 'a',
   'monotonic', 'sequence', 'number', 'that', 'the', 'client',
   'uses', 'as', 'a', 'cursor', 'for', 'resumption.',
+  'In', 'modern', 'distributed', 'architectures,', 'transient', 'network',
+  'partitions', 'are', 'inevitable', 'and', 'must', 'be',
+  'handled', 'gracefully.', 'By', 'persisting', 'every', 'streamed',
+  'chunk', 'into', 'durable', 'write-ahead', 'storage', 'before',
+  'live', 'broadcast,', 'the', 'system', 'guarantees', 'complete',
+  'resilience', 'without', 'data', 'loss.', 'Clients', 'can',
+  'reconnect', 'at', 'any', 'arbitrary', 'checkpoint', 'and',
+  'replay', 'missed', 'events', 'in', 'strict', 'causal',
+  'order.', 'This', 'design', 'delivers', 'a', 'dependable,',
+  'deterministic,', 'and', 'seamless', 'conversational', 'experience',
+  'across', 'all', 'network', 'conditions.'
 ];
 
 /**
@@ -65,7 +76,12 @@ export async function* generateReply(opts = {}) {
     for (let w = 0; w < wordsPerChunk; w++) {
       words.push(SAMPLE_WORDS[(startWord + w) % SAMPLE_WORDS.length]);
     }
-    const text = words.join(' ') + ' ';
+    let text = words.join(' ') + ' ';
+
+    // Ensure the final chunk concludes with a proper full stop instead of an abrupt comma
+    if (i === chunkCount - 1) {
+      text = text.trimEnd().replace(/[,;:]+$/, '') + '.';
+    }
 
     yield { text, index: i };
 
