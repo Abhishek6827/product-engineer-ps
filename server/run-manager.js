@@ -64,7 +64,7 @@ export function startRun({ content, conversationId, generatorOpts = {} }) {
   updateRunState(runId, 'running');
 
   // Spawn async generator consumption (fire-and-forget)
-  consumeGenerator(runId, emitter, abortController.signal, generatorOpts);
+  consumeGenerator(runId, emitter, abortController.signal, { ...generatorOpts, prompt: content });
 
   return { conversationId, userMessageId, runId };
 }
